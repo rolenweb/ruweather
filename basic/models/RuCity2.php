@@ -63,4 +63,17 @@ class RuCity2 extends \yii\db\ActiveRecord
             'lat' => 'Lat',
         ];
     }
+
+    public function findBySearch($search1, $search2 = NULL, $search3 = NULL)
+    {
+        if ($search1 != NULL && $search2 != NULL && $search3 != NULL) {
+            return $this->find()->where(['and',['like', 'name', $search1],['like', 'district', $search2],['like', 'region', $search3]])->orderBy(['name' => SORT_ASC, 'district' => SORT_ASC, 'region' => SORT_ASC])->asArray()->all();
+        }elseif ($search1 != NULL && $search2 != NULL) {
+            return $this->find()->where(['and',['like', 'name', $search1],['or',['like', 'district', $search2],['like', 'region',                                                                                                                                                                                                                                $search2]]])->orderBy(['name' => SORT_ASC, 'district' => SORT_ASC, 'region' => SORT_ASC])->asArray()->all();
+        }
+        else{
+            return $this->find()->where(['like', 'name', $search1])->orderBy(['name' => SORT_ASC, 'district' => SORT_ASC, 'region' => SORT_ASC])->asArray()->all();   
+        }
+        
+    }
 }

@@ -5,7 +5,7 @@ if ($array_states != NULL) {
 ?>
 				<div class="col-xs-6 border-b">
 					
-					<?= Html::a($state['name'],['site/index', 'state' => strtolower($state['code'])],['title' => 'Weather forecast '.$state['name']]) ?>
+					<?= Html::a($state['name'],['site/index', 'region' => strtolower($state['id'])],['title' => 'Прогноз погоды '.$state['name']]) ?>
 
 				</div>
 <?php		

@@ -15,6 +15,9 @@ use app\models\CityFromWeathe2;
 use app\models\CityFromFile;
 use app\models\CityFromFile2;
 use app\models\CityFromFileUnic;
+use app\models\CrimCity;
+use app\models\Region;
+use app\models\District;
 use app\models\LogData;
 use app\models\ErrorData;
 use app\models\LoginForm;
@@ -67,15 +70,15 @@ class SiteController extends Controller
         ];
     }
 
-    public function actionIndex()
+    public function actionIndex($city = NULL, $district = NULL, $region = NULL)
     {
-        set_time_limit(60000);
+        //set_time_limit(60000);
                 
         // Language of data (try your own language here!):
-        $lang = 'en';
+        $lang = 'ru';
         // Units (can be 'metric' or 'imperial' [default]):
-        //$units = 'metric';
-        $units = 'imperial';
+        $units = 'metric';
+        //$units = 'imperial';
 
         $api = 'eaeaeae2be4a7ff45e9a15bc46dc9929';
 
@@ -83,7 +86,7 @@ class SiteController extends Controller
 
         //search
         $model_search = new Search();
-        if ($model_search->load(Yii::$app->request->get())) {
+        /*if ($model_search->load(Yii::$app->request->get())) {
             $array_query = explode(',', $model_search->query);
             $array_search_city = UsCities::find()->where(['name' => trim($array_query[0]),'state' => trim($array_query[1])])->select(['id_city'])->asArray()->one();
             if ($array_search_city != NULL) {
@@ -95,16 +98,16 @@ class SiteController extends Controller
                 return $this->redirect(['site/index']);
             }
             
-        }
+        }*/
         //search
         $cache = Yii::$app->cache;
-        //$cache->flush();
+        $cache->flush();
         //array_states
-        /*$array_states = $cache->get('list_state');
+        $array_states = $cache->get('list_state');
         if ($array_states === false) {
-            $array_states = UsStates::find()->select(['code','name'])->asArray()->all();
+            $array_states = Region::find()->where(['and',['not like', 'name', 'Актюбинская область'], ['not like', 'name', 'Атырауская область'], ['not like', 'name', 'Восточно-Казахстанская область'], ['not like', 'name', 'Гомельская область'], ['not like', 'name', 'Гульрипшский район'], ['not like', 'name', 'Донецкая область'], ['not like', 'name', 'Западно-Казахстанская область'], ['not like', 'name', 'Костанайская область'], ['not like', 'name', 'край Мцхета-Мтианети'], ['not like', 'name', 'Луганская область'], ['not like', 'name', 'Могилёвская область'], ['not like', 'name', 'Павлодарская область'], ['not like', 'name', 'Северо-Казахстанская область'], ['not like', 'name', 'Сумская область'], ['not like', 'name', 'Харьковская область'], ['not like', 'name', 'Хачмазский район'], ['not like', 'name', 'Витебская область']])->select(['id','name'])->orderBy(['name' => SORT_ASC])->asArray()->all();
             $cache->set('list_state',$array_states);
-        }*/
+        }
         
         //array_states
 
@@ -119,11 +122,84 @@ class SiteController extends Controller
         $render_array = array();
         $render_array_total = [
             'array_states' => $array_states,
-            'array_for_typeahead' => $array_for_typeahead,
-            'model_search' => $model_search,
+            //'array_for_typeahead' => $array_for_typeahead,
+            //'model_search' => $model_search,
         ];
 
-        $request = Yii::$app->request;
+        if ($city != NULL && $district != NULL && $region != NULL) {
+            # code...
+        }elseif ($district != NULL && $region != NULL) {
+            $model_region = Region::find()->with(['districts'])->where(['id' => trim($region)])->limit(1)->one();
+            $model_district = District::find()->where(['id' => trim($district)])->limit(1)->one();
+            $cities = RuCity2::find()->where(['region' => $model_region->name, 'district' => $model_district->name])->orderBy(['name' => SORT_ASC])->all();
+            $array_render_district = [
+                'cities' => $cities, 
+                'district' => $model_district,
+                'region' => $model_region,
+            ];
+            $render_array = array_merge($render_array_total,$array_render_district);
+            return $this->render('district',$render_array);
+        }elseif ($region != NULL) {
+            $model_region = Region::find()->with(['districts'])->where(['id' => trim($region)])->limit(1)->one();
+            $array_render_index = [
+                'region' => $model_region, 
+            ];
+            $render_array = array_merge($render_array_total,$array_render_index);
+            return $this->render('state',$render_array);
+        }else{
+            
+            $weather_moscow = $cache->get('weather_moscow_home');
+            if ($weather_moscow === false) {
+                $weather_moscow = $owm->getWeather(524901, $units, $lang, $api);
+                $cache->set('weather_moscow_home',$weather_moscow,3600);
+            }
+            $weather_piter = $cache->get('weather_piter_home');
+            if ($weather_piter === false) {
+                $weather_piter = $owm->getWeather(519690, $units, $lang, $api);
+                $cache->set('weather_piter_home',$weather_piter,3600);
+            }
+            $weather_novosib = $cache->get('weather_novosib_home');
+            if ($weather_novosib === false) {
+                $weather_novosib = $owm->getWeather(1512086, $units, $lang, $api);
+                $cache->set('weather_novosib_home',$weather_novosib,3600);
+            }
+            $weather_eburg = $cache->get('weather_eburg_home');
+            if ($weather_eburg === false) {
+                $weather_eburg = $owm->getWeather(1493273, $units, $lang, $api);
+                $cache->set('weather_eburg_home',$weather_eburg,3600);
+            }
+            $weather_nizhny_novgorod = $cache->get('weather_nizhny_novgorod_home');
+            if ($weather_nizhny_novgorod === false) {
+                $weather_nizhny_novgorod = $owm->getWeather(470012, $units, $lang, $api);
+                $cache->set('weather_nizhny_novgorod_home',$weather_nizhny_novgorod,3600);
+            }
+            $weather_samara = $cache->get('weather_samara_home');
+            if ($weather_samara === false) {
+                $weather_samara = $owm->getWeather(499099, $units, $lang, $api);
+                $cache->set('weather_samara_home',$weather_samara,3600);
+            }
+            $array_img_wind = array();
+            $array_img_wind['moscow'] = $this->getWindDirection($weather_moscow->wind->direction->getValue());
+            $array_img_wind['piter'] = $this->getWindDirection($weather_piter->wind->direction->getValue());
+            $array_img_wind['novosib'] = $this->getWindDirection($weather_novosib->wind->direction->getValue());
+            $array_img_wind['eburg'] = $this->getWindDirection($weather_eburg->wind->direction->getValue());
+            $array_img_wind['nizhny_novgorod'] = $this->getWindDirection($weather_nizhny_novgorod->wind->direction->getValue());
+            $array_img_wind['samara'] = $this->getWindDirection($weather_samara->wind->direction->getValue());
+
+            $array_render_index = [
+                'weather_moscow' => $weather_moscow,
+                'weather_piter' => $weather_piter,
+                'weather_novosib' => $weather_novosib,
+                'weather_eburg' => $weather_eburg,
+                'weather_nizhny_novgorod' => $weather_nizhny_novgorod,
+                'weather_samara' => $weather_samara,
+                'array_img_wind' => $array_img_wind,
+            ];
+            $render_array = array_merge($render_array_total,$array_render_index);
+            return $this->render('index',$render_array);
+        }
+
+        
        /* 
         if ($request->get('state') !== NULL && $request->get('city') !== NULL) {
             //city
@@ -330,12 +406,20 @@ class SiteController extends Controller
             
         }*/
 
+        //$list = RuCity2::find()->where(['between','id',90000,118569])->all();
+        foreach ($list as $city) {
+            
+            $this->district_table($city->district, $this->region_table($city->region));
+
+        }
+
+        //echo "test";
         //$this->txtToDatabase('ua');
         //$this->jsonToDatabase('ua');
         //var_dump(RuCity::find()->where(['lat' => 58.5458])->all());
-        //$list = CityFromFile::find()->where(['between','id',454001,460000])->all();
+        //$list = CityFromFile2::find()->where(['between','id',7567,8997])->all();
         //$list = CityFromFile::find()->where(['id' => 430005])->all();
-        if ($list != NULL) {
+        /*if ($list != NULL) {
             foreach ($list as $item) {
                 //log
                 $log = new LogData();
@@ -386,10 +470,10 @@ class SiteController extends Controller
                     }*/
                     
                     
-                }
+        /*        }
                 //die();   
             }
-        }
+        }*/
         
         /*if ($list != NULL) {
             foreach ($list as $item) {
@@ -413,7 +497,34 @@ class SiteController extends Controller
     }
 
     
+    public function actionAutocompleteCity()
+    {
+        
+            if(Yii::$app->request->isAjax){
+                $get_data = Yii::$app->request->get(); 
+                
+                $arr_query = $this->strToArray($this->deleteComma(trim($get_data['q'])));
+                
 
+                if ($get_data['q'] != NULL) {
+                    $result = (new RuCity2())->findBySearch($arr_query[0], $arr_query[1], $arr_query[2]);    
+                }
+                
+                $resp = [];
+                if ($result != NULL) {
+                    $n_res = 0;
+                    foreach ($result as $item) {
+                        $resp[$n_res]['value'] = $item['name'].', '.$item['district'].', '.$item['region'];
+                            $resp[$n_res]['label'] = $item['name'].', '.$item['district'].', '.$item['region'];
+                            $resp[$n_res]['id'] = $item['id'];
+                            $n_res++;
+                        }
+                     }
+                     
+                     return Json::encode($resp);
+            }
+        
+    }
     
 
 
@@ -551,7 +662,7 @@ class SiteController extends Controller
             $min_lat = $lat - $delta;
             $max_lon = $lon + $delta;
             $max_lat = $lat + $delta;
-            $out = CityFromWeathe::find()->where(['and',['between','coord_lon',$min_lon,$max_lon],['between','coord_lat',$min_lat,$max_lat]])->one();
+            $out = CityFromWeathe2::find()->where(['and',['between','coord_lon',$min_lon,$max_lon],['between','coord_lat',$min_lat,$max_lat]])->one();
             if ($out != NULL) {
                 break;
             }
@@ -1056,6 +1167,57 @@ class SiteController extends Controller
             $out = strtr($text, array_flip($translit));
         }
        return $out;
+    }
+
+    public function region_table($name)
+    {
+
+        $old = Region::find()->where(['name' => $name])->limit(1)->one();
+        if ($old == NULL) {
+            $new = new Region();
+            $new->name = $name;
+            $new->save();
+            $out = $new->id;
+        }
+        else{
+            $out = $old->id;
+        }
+        return $out;
+    }
+    public function district_table($name, $id_region)
+    {   
+
+        $old = District::find()->where(['name' => $name, 'region_id' => $id_region])->limit(1)->one();
+        if ($old == NULL) {
+            $new = new District();
+            $new->name = $name;
+            $new->region_id = $id_region;
+            $new->save();
+        }
+        return;
+    }
+
+    public function deleteComma($str)
+    {
+        return str_replace(',', '', $str);
+    }
+
+    public function strToArray($str)
+    {
+        $out = [];
+        $arr = explode(' ', $str);
+        if ($arr != NULL) {
+            foreach ($arr as $item) {
+                if (trim($item) != NULL) {
+                    $out[] = trim($item);
+                }
+                
+            }
+        }
+        else{
+            $out[] = $str;
+        }
+        return $out;
     }
 
 }

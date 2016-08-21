@@ -23,11 +23,11 @@ use yii\helpers\Url;
                   <div class="visible-xs-block">
                     
 <?php
-echo $this->render('_search_mobile',[
+/*echo $this->render('_search_mobile',[
         'array_for_typeahead' => $array_for_typeahead,
         'model_search' => $model_search,
         'id_activeform' => 'search_mobile',
-        ]);     
+        ]);     */
 ?>                     
                     
 

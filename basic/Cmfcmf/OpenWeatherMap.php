@@ -149,6 +149,7 @@ class OpenWeatherMap
      */
     public function getWeather($query, $units = 'imperial', $lang = 'en', $appid = '')
     {
+        
         // Disable default error handling of SimpleXML (Do not throw E_WARNINGs).
         libxml_use_internal_errors(true);
         libxml_clear_errors();
